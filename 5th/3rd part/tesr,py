@@ -1,0 +1,103 @@
+import cv2
+import numpy as np
+
+# Global variables to store rotated Indian flags
+rotated_flag_0_deg = None
+rotated_flag_90_deg = None
+rotated_flag_180_deg = None
+rotated_flag_270_deg = None
+
+def rotate(img, angle):
+    # rotates given image 'img' at an angle of 'angle' degrees
+    # rotation must be anticlockwise
+
+    # Get image center and rotation matrix
+    center = tuple(np.array(img.shape[1::-1]) / 2)
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+
+    # Apply rotation to the image
+    rotated_img = cv2.warpAffine(img, rotation_matrix, img.shape[1::-1], flags=cv2.INTER_LINEAR)
+
+    return rotated_img
+
+def generate():
+    global rotated_flag_0_deg, rotated_flag_90_deg, rotated_flag_180_deg, rotated_flag_270_deg
+    
+    # White canvas of size 600x600
+    indian_flag = np.ones((600, 600, 3), dtype=np.uint8) * 255
+    center = (300, 300)
+    radius = 100
+    chakra_width = 2
+    spoke_width = 1
+
+    # Green part
+    cv2.rectangle(indian_flag, (0, 400), (600, 600), (0, 128, 0), thickness=cv2.FILLED)
+    cv2.rectangle(indian_flag, (0, 200), (600, 300), (255, 255, 255), thickness=cv2.FILLED)
+
+    # Orange part
+    cv2.rectangle(indian_flag, (0, 0), (600, 200), (0, 165, 255), thickness=cv2.FILLED)
+
+    # The blue circle (chakra)
+    cv2.circle(indian_flag, center, radius, (255, 0, 0), thickness=chakra_width)
+
+    # Draw the 24 spokes
+    num_spokes = 24
+    for i in range(num_spokes):
+        angle = i * (360 / num_spokes)
+        endpoint_x = int(center[0] + radius * np.cos(np.radians(angle)))
+        endpoint_y = int(center[1] + radius * np.sin(np.radians(angle)))
+        cv2.line(indian_flag, center, (endpoint_x, endpoint_y), (255, 0, 0), thickness=spoke_width)
+
+    # Store the rotated flags in global variables
+    rotated_flag_0_deg = indian_flag
+    rotated_flag_90_deg = rotate(indian_flag, 90)
+    rotated_flag_180_deg = rotate(indian_flag, 180)
+    rotated_flag_270_deg = rotate(indian_flag, 270)
+
+# Call the generate function to generate rotated flags
+generate()
+
+def unskew(s):
+    global rotated_flag_0_deg, rotated_flag_90_deg, rotated_flag_180_deg, rotated_flag_270_deg
+    
+    # Read the input image
+    input_image = cv2.imread(s)
+
+    # Get the midline along the central vertical line
+    midline = input_image[:, 299]
+
+    # Store distinct colors (ignoring blue and black)
+    vertical_colors = [tuple(input_image[i, 299]) for i in range(input_image.shape[0]) if i != 300]
+
+    
+    # Reconstruct the reference image based on the identified colors
+    reference_image = np.ones_like(input_image) * 255  # White canvas
+    
+    # Draw rectangles with identified colors
+    cv2.rectangle(reference_image, (0, 0), (600, 200), vertical_colors[2], cv2.FILLED)
+    cv2.rectangle(reference_image, (0, 200), (600, 300), vertical_colors[1], cv2.FILLED)
+    cv2.rectangle(reference_image, (0, 400), (600, 600), vertical_colors[0], cv2.FILLED)
+
+
+    # Draw the blue circle (chakra)
+    cv2.circle(reference_image, (300, 300), 100, vertical[3], thickness=2)
+
+    # Draw the 24 spokes
+    num_spokes = 24
+    for i in range(num_spokes):
+        angle = i * (360 / num_spokes)
+        endpoint_x = int(300 + 100 * np.cos(np.radians(angle)))
+        endpoint_y = int(300 + 100 * np.sin(np.radians(angle)))
+        cv2.line(reference_image, (300, 300), (endpoint_x, endpoint_y), vertical[3], thickness=1)
+
+    # Display the reference image
+    cv2.imshow('Reference Image', reference_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+# Example usage:
+# Specify the path of the input image
+image_path = "/Users/akashpaijwar/Documents/Winter Project/CV101/5th/3rd part/testcase/3.jpeg"
+
+# Call the unskew function to generate and display the reference image
+unskew(image_path)
